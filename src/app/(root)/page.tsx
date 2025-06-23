@@ -1,7 +1,8 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { socket } from '../socket'
+import { socket } from '../../socket'
+import { Button } from 'antd'
 
 export default function Home() {
   const [isConnected, setIsConnected] = useState(false)
@@ -49,7 +50,7 @@ export default function Home() {
   }
 
   return (
-    <div>
+    <>
       <p>Status: {isConnected ? 'connected' : 'disconnected'}</p>
       <p>Transport: {transport}</p>
       <br />
@@ -65,8 +66,8 @@ export default function Home() {
 
       <div>
         <input type="text" value={message} onChange={(e) => setMessage(e.target.value)} />
-        <button onClick={sendMessage}>Enviar</button>
+        <Button onClick={sendMessage}>Enviar</Button>
       </div>
-    </div>
+    </>
   )
 }

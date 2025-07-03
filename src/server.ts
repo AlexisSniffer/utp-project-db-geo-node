@@ -1,6 +1,7 @@
 import { createServer } from 'node:http'
 import next from 'next'
 import { Server, Socket } from 'socket.io'
+import { CoordsProps } from './types/coords.types'
 
 const dev = process.env.NODE_ENV !== 'production'
 const hostname = 'localhost'
@@ -16,8 +17,8 @@ app.prepare().then(() => {
   io.on('connection', (socket: Socket) => {
     console.log(`A user connected: ${socket.id}`)
 
-    socket.on('message', (msg: string) => {
-      console.log(`Message received: ${msg}`)
+    socket.on('message', (msg: CoordsProps) => {
+      console.log(`Message received: ${JSON.stringify(msg)}`)
       io.emit('message', msg)
     })
   })

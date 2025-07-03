@@ -1,13 +1,14 @@
 'use client'
 
 import {
+  AimOutlined,
+  FundProjectionScreenOutlined,
+  HomeOutlined,
   MenuFoldOutlined,
   MenuUnfoldOutlined,
-  UploadOutlined,
-  UserOutlined,
-  VideoCameraOutlined,
 } from '@ant-design/icons'
 import { Button, Layout, Menu, theme } from 'antd'
+import Link from 'next/link'
 import { useState } from 'react'
 import styles from './page.module.css'
 
@@ -30,18 +31,18 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           items={[
             {
               key: '1',
-              icon: <UserOutlined />,
-              label: 'nav 1',
+              icon: <HomeOutlined />,
+              label: 'Inicio',
             },
             {
               key: '2',
-              icon: <VideoCameraOutlined />,
-              label: 'nav 2',
+              icon: <AimOutlined />,
+              label: <Link href="/track">Crear Nodo</Link>,
             },
             {
               key: '3',
-              icon: <UploadOutlined />,
-              label: 'nav 3',
+              icon: <FundProjectionScreenOutlined />,
+              label: <Link href="/map">Mapa</Link>,
             },
           ]}
         />

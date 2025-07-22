@@ -3,6 +3,10 @@
 import { useEffect, useState } from 'react'
 import { socket } from '../../../socket'
 import { CoordsProps } from '@/types/coords.types'
+import { Badge, Card, Col, Flex, Row, Table, Typography } from 'antd'
+import OpenLayersMap from '@/componets/OpenLayersMap'
+
+const { Text } = Typography
 
 export default function Track() {
   const [isConnected, setIsConnected] = useState(false)
@@ -28,10 +32,6 @@ export default function Track() {
       setTransport('N/A')
     }
 
-    socket.on('message', (msg: CoordsProps) => {
-      setCoords((prev) => [...prev, msg])
-    })
-
     socket.on('connect', onConnect)
     socket.on('disconnect', onDisconnect)
 
@@ -41,13 +41,26 @@ export default function Track() {
     }
   }, [])
 
-  // Captura coordenadas cada 10 segundos
   useEffect(() => {
     const getLocation = () => {
       if (navigator.geolocation) {
         navigator.geolocation.getCurrentPosition(
           (position) => {
-            socket.emit('message', { node: socket.id, coords: position.coords })
+            const track: CoordsProps = {
+              node: socket.id!,
+              date: new Date(),
+              coords: {
+                latitude: position.coords.latitude,
+                longitude: position.coords.longitude,
+              },
+            }
+
+            setCoords((prevCoords) => {
+              return prevCoords.length >= 10
+                ? [...prevCoords.slice(1), track]
+                : [...prevCoords, track]
+            })
+            socket.emit('message', track)
           },
           (error) => {
             console.error('Error obteniendo coordenadas:', error)
@@ -68,33 +81,61 @@ export default function Track() {
 
   return (
     <>
-      <p>Status: {isConnected ? 'connected' : 'disconnected'}</p>
-      <p>Transport: {transport}</p>
-      <p>Socket ID: {socket.id}</p>
-      <br />
-
-      <div>
-        Mensajes:
-        {coords.map((coord, index) => (
-          <div
-            key={index}
-            style={{
-              marginBottom: '8px',
-              padding: '8px',
-              border: '1px solid #eee',
-              borderRadius: '4px',
-            }}
-          >
-            <strong>Node:</strong> {coord.node}
-            <strong>Latitude:</strong> {coord.coords.latitude}
-            <strong>Longitude:</strong> {coord.coords.longitude}
-          </div>
-        ))}
-      </div>
-      <br />
-
-      <br />
-      <br />
+      <Flex vertical gap={16}>
+        <Row gutter={[16, 16]}>
+          <Col xs={24} sm={12} lg={8}>
+            <Card title="Conexión" style={{ width: '100%' }}>
+              {
+                <Badge
+                  status={isConnected ? 'success' : 'error'}
+                  text={isConnected ? 'Conectado' : 'Desconectado'}
+                />
+              }
+            </Card>
+          </Col>
+          <Col xs={24} sm={12} lg={8}>
+            <Card title="Transportador" style={{ width: '100%' }}>
+              <Text>{transport}</Text>
+            </Card>
+          </Col>
+          <Col xs={24} sm={12} lg={8}>
+            <Card title="Socket ID" style={{ width: '100%' }}>
+              <Text>{socket.id ?? 'N/A'}</Text>
+            </Card>
+          </Col>
+        </Row>
+        <Row gutter={[16, 16]}>
+          <Col xs={24} lg={16}>
+            <Table
+              dataSource={coords}
+              size="small"
+              pagination={false}
+              columns={[
+                /* {
+                  render: (_value, _record, index) => <span>{index == 0 ? '📍' : ''}</span>,
+                }, */
+                {
+                  title: 'Fecha',
+                  dataIndex: 'date',
+                  key: 'date',
+                  defaultSortOrder: 'descend',
+                  render: (date) => new Date(date).toLocaleString(),
+                },
+                {
+                  title: 'Coordenadas',
+                  children: [
+                    { title: 'Latitud', dataIndex: ['coords', 'latitude'], key: 'latitude' },
+                    { title: 'Longitud', dataIndex: ['coords', 'longitude'], key: 'longitude' },
+                  ],
+                },
+              ]}
+            ></Table>
+          </Col>
+          <Col xs={24} lg={8}>
+            <OpenLayersMap coords={coords ? [coords[coords.length - 1]] : []} />
+          </Col>
+        </Row>
+      </Flex>
     </>
   )
 }

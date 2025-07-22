@@ -1,42 +1,117 @@
-// components/OpenLayersMap.tsx
 'use client'
 
-import React, { useEffect, useRef } from 'react'
-import 'ol/ol.css'
+import { CoordsProps } from '@/types/coords.types'
+import { Typography } from 'antd'
+import Feature from 'ol/Feature'
 import Map from 'ol/Map'
 import View from 'ol/View'
+import Point from 'ol/geom/Point'
 import TileLayer from 'ol/layer/Tile'
+import VectorLayer from 'ol/layer/Vector'
+import 'ol/ol.css'
+import { fromLonLat } from 'ol/proj'
 import OSM from 'ol/source/OSM'
+import VectorSource from 'ol/source/Vector'
+import { Circle as CircleStyle, Fill, Stroke, Style } from 'ol/style'
+import React, { useEffect, useRef } from 'react'
 
-const OpenLayersMap: React.FC = () => {
+const { Text } = Typography
+
+interface Props {
+  coords: CoordsProps[] | null
+  center?: [number, number]
+}
+
+const OpenLayersMap: React.FC<Props> = ({ coords, center }: Props) => {
   const mapRef = useRef<HTMLDivElement | null>(null)
+  const mapInstance = useRef<Map | null>(null)
+  const pointFeature = useRef<Feature>(new Feature())
 
   useEffect(() => {
     if (!mapRef.current) return
 
-    const map = new Map({
-      target: mapRef.current,
-      layers: [
-        new TileLayer({
-          source: new OSM(),
-        }),
-      ],
-      view: new View({
-        center: [0, 0], // Centro del mapa en coordenadas EPSG:3857
-        zoom: 2,
+    const view = new View({
+      center: center ? center : [0, 0],
+      zoom: 2,
+    })
+
+    const vectorLayer = new VectorLayer({
+      source: new VectorSource({
+        features: [pointFeature.current],
       }),
     })
 
+    const map = new Map({
+      target: mapRef.current,
+      layers: [new TileLayer({ source: new OSM() }), vectorLayer],
+      view: view,
+    })
+
+    mapInstance.current = map
+
     return () => {
-      map.setTarget() // Limpia el mapa al desmontar
+      map.setTarget(undefined)
     }
-  }, [])
+  }, [center])
+
+  useEffect(() => {
+    if (!coords || !mapInstance.current) return
+
+    const positions = coords.map((coord) =>
+      fromLonLat([coord.coords.longitude, coord.coords.latitude]),
+    )
+
+    const features = positions.map((pos) => {
+      const feature = new Feature(new Point(pos))
+      feature.setStyle(
+        new Style({
+          image: new CircleStyle({
+            radius: 6,
+            fill: new Fill({ color: '#C62828' }),
+            stroke: new Stroke({ color: '#455A64', width: 1 }),
+          }),
+        }),
+      )
+      return feature
+    })
+
+    const map = mapInstance.current
+    const vectorLayer = map
+      .getLayers()
+      .getArray()
+      .find((layer) => layer instanceof VectorLayer) as VectorLayer
+
+    const vectorSource = vectorLayer.getSource() as VectorSource
+    vectorSource.clear()
+    vectorSource.addFeatures(features)
+
+    map.getView().setCenter(positions[0])
+  }, [coords])
 
   return (
-    <div
-      ref={mapRef}
-      style={{ width: '100%', height: '500px', border: '2px solid gray', borderRadius: '8px' }}
-    />
+    <>
+      <div
+        ref={mapRef}
+        style={{
+          width: '100%',
+          height: '500px',
+          border: '2px solid gray',
+          borderRadius: '8px',
+        }}
+      />
+      <Text>
+        {coords && coords.length > 0
+          ? coords.map((coord, idx) => (
+              <span key={idx}>
+                {`Posición Actual: lat: ${coord.coords.latitude}, lng: ${
+                  coord.coords.longitude
+                }\nFecha: ${new Date(coord.date).toLocaleString()}`}
+                <br />
+              </span>
+            ))
+          : 'No hay coordenadas disponibles'}
+      </Text>
+    </>
   )
 }
 

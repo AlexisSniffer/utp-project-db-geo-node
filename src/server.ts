@@ -18,7 +18,6 @@ app.prepare().then(() => {
     console.log(`A user connected: ${socket.id}`)
 
     socket.on('message', (msg: CoordsProps) => {
-      console.log(`Message received: ${JSON.stringify(msg)}`)
       io.emit('message', msg)
     })
   })

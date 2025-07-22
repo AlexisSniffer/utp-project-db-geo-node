@@ -37,7 +37,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             {
               key: '2',
               icon: <AimOutlined />,
-              label: <Link href="/track">Crear Nodo</Link>,
+              label: <Link href="/track">Rastrear</Link>,
             },
             {
               key: '3',

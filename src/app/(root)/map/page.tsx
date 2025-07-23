@@ -2,7 +2,7 @@
 
 import OpenLayersMap from '@/componets/OpenLayersMap'
 import { CoordsProps } from '@/types/coords.types'
-import { Badge, Card, Col, Flex, Row, Typography } from 'antd'
+import { Badge, Card, Col, Flex, Row, Table, Typography } from 'antd'
 import { useEffect, useState } from 'react'
 import { socket } from '../../../socket'
 
@@ -56,7 +56,6 @@ export default function Map() {
 
   return (
     <>
-      <pre>Coordenadas: {coords.length}</pre>
       <Flex vertical gap={16}>
         <Row gutter={[16, 16]}>
           <Col xs={24} sm={12} lg={8}>
@@ -80,9 +79,32 @@ export default function Map() {
             </Card>
           </Col>
         </Row>
-        <Row>
-          <Col xs={24}>
+        <Row gutter={[16, 16]}>
+          <Col xs={24} lg={16}>
             <OpenLayersMap coords={coords} />
+          </Col>
+          <Col xs={24} lg={8}>
+            <Table
+              dataSource={coords}
+              size="small"
+              pagination={false}
+              columns={[
+                {
+                  title: 'Fecha',
+                  dataIndex: 'date',
+                  key: 'date',
+                  defaultSortOrder: 'descend',
+                  render: (date) => new Date(date).toLocaleString(),
+                },
+                {
+                  title: 'Coordenadas',
+                  children: [
+                    { title: 'Latitud', dataIndex: ['coords', 'latitude'], key: 'latitude' },
+                    { title: 'Longitud', dataIndex: ['coords', 'longitude'], key: 'longitude' },
+                  ],
+                },
+              ]}
+            ></Table>
           </Col>
         </Row>
       </Flex>

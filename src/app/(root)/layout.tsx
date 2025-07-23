@@ -21,7 +21,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   } = theme.useToken()
 
   return (
-    <Layout>
+    <Layout style={{ minHeight: '100%' }}>
       <Sider trigger={null} collapsible collapsed={collapsed}>
         <div className={styles['demo-logo-vertical']} />
         <Menu
@@ -65,7 +65,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             margin: '24px 16px',
             padding: 24,
             minHeight: 280,
-            maxHeight: '100vh',
             background: colorBgContainer,
             borderRadius: borderRadiusLG,
           }}

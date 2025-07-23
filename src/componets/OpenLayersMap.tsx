@@ -1,7 +1,6 @@
 'use client'
 
 import { CoordsProps } from '@/types/coords.types'
-import { Typography } from 'antd'
 import Feature from 'ol/Feature'
 import Map from 'ol/Map'
 import View from 'ol/View'
@@ -14,8 +13,6 @@ import OSM from 'ol/source/OSM'
 import VectorSource from 'ol/source/Vector'
 import { Circle as CircleStyle, Fill, Stroke, Style } from 'ol/style'
 import React, { useEffect, useRef } from 'react'
-
-const { Text } = Typography
 
 interface Props {
   coords: CoordsProps[] | null
@@ -100,18 +97,6 @@ const OpenLayersMap: React.FC<Props> = ({ coords, center, zoom }: Props) => {
           height: '500px',
         }}
       />
-      <Text>
-        {coords && coords.length
-          ? coords.map((coord, idx) => (
-              <span key={idx}>
-                {`Posición Actual: lat: ${coord.coords.latitude}, lng: ${
-                  coord.coords.longitude
-                }\nFecha: ${new Date(coord.date).toLocaleString()}`}
-                <br />
-              </span>
-            ))
-          : 'No hay coordenadas disponibles'}
-      </Text>
     </>
   )
 }

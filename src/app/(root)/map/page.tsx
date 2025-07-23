@@ -1,9 +1,12 @@
 'use client'
 
+import OpenLayersMap from '@/componets/OpenLayersMap'
+import { CoordsProps } from '@/types/coords.types'
+import { Badge, Card, Col, Flex, Row, Typography } from 'antd'
 import { useEffect, useState } from 'react'
 import { socket } from '../../../socket'
-import { CoordsProps } from '@/types/coords.types'
-import OpenLayersMap from '@/componets/OpenLayersMap'
+
+const { Text } = Typography
 
 export default function Map() {
   const [isConnected, setIsConnected] = useState(false)
@@ -30,7 +33,16 @@ export default function Map() {
     }
 
     socket.on('message', (msg: CoordsProps) => {
-      setCoords((prev) => [...prev, msg])
+      setCoords((prev) => {
+        const index = prev.findIndex((node) => node.node === msg.node)
+        if (index !== -1) {
+          const updated = [...prev]
+          updated[index] = { ...updated[index], coords: msg.coords }
+          return updated
+        } else {
+          return [...prev, msg]
+        }
+      })
     })
 
     socket.on('connect', onConnect)
@@ -42,34 +54,38 @@ export default function Map() {
     }
   }, [])
 
-  // Captura coordenadas cada 10 segundos
-  useEffect(() => {
-    const getLocation = () => {
-      if (navigator.geolocation) {
-        navigator.geolocation.getCurrentPosition(
-          (position) => {
-            socket.emit('message', { node: socket.id, coords: position.coords })
-          },
-          (error) => {
-            console.error('Error obteniendo coordenadas:', error)
-          },
-          {
-            enableHighAccuracy: true,
-            timeout: 5000,
-            maximumAge: 0,
-          },
-        )
-      }
-    }
-
-    getLocation()
-    const interval = setInterval(getLocation, 20000)
-    return () => clearInterval(interval)
-  }, [])
-
   return (
     <>
-      <OpenLayersMap />
+      <pre>Coordenadas: {coords.length}</pre>
+      <Flex vertical gap={16}>
+        <Row gutter={[16, 16]}>
+          <Col xs={24} sm={12} lg={8}>
+            <Card title="Conexión" style={{ width: '100%' }}>
+              {
+                <Badge
+                  status={isConnected ? 'success' : 'error'}
+                  text={isConnected ? 'Conectado' : 'Desconectado'}
+                />
+              }
+            </Card>
+          </Col>
+          <Col xs={24} sm={12} lg={8}>
+            <Card title="Transportador" style={{ width: '100%' }}>
+              <Text>{transport}</Text>
+            </Card>
+          </Col>
+          <Col xs={24} sm={12} lg={8}>
+            <Card title="Nodos" style={{ width: '100%' }}>
+              <Text>{coords.length}</Text>
+            </Card>
+          </Col>
+        </Row>
+        <Row>
+          <Col xs={24}>
+            <OpenLayersMap coords={coords} />
+          </Col>
+        </Row>
+      </Flex>
     </>
   )
 }

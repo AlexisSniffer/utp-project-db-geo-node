@@ -20,9 +20,10 @@ const { Text } = Typography
 interface Props {
   coords: CoordsProps[] | null
   center?: [number, number]
+  zoom?: number
 }
 
-const OpenLayersMap: React.FC<Props> = ({ coords, center }: Props) => {
+const OpenLayersMap: React.FC<Props> = ({ coords, center, zoom }: Props) => {
   const mapRef = useRef<HTMLDivElement | null>(null)
   const mapInstance = useRef<Map | null>(null)
   const pointFeature = useRef<Feature>(new Feature())
@@ -32,7 +33,7 @@ const OpenLayersMap: React.FC<Props> = ({ coords, center }: Props) => {
 
     const view = new View({
       center: center ? center : [0, 0],
-      zoom: 2,
+      zoom: zoom ?? 2,
     })
 
     const vectorLayer = new VectorLayer({
@@ -52,10 +53,12 @@ const OpenLayersMap: React.FC<Props> = ({ coords, center }: Props) => {
     return () => {
       map.setTarget(undefined)
     }
-  }, [center])
+  }, [center, zoom])
 
   useEffect(() => {
     if (!coords || !mapInstance.current) return
+
+    if (!coords.length) return
 
     const positions = coords.map((coord) =>
       fromLonLat([coord.coords.longitude, coord.coords.latitude]),
@@ -95,12 +98,10 @@ const OpenLayersMap: React.FC<Props> = ({ coords, center }: Props) => {
         style={{
           width: '100%',
           height: '500px',
-          border: '2px solid gray',
-          borderRadius: '8px',
         }}
       />
       <Text>
-        {coords && coords.length > 0
+        {coords && coords.length
           ? coords.map((coord, idx) => (
               <span key={idx}>
                 {`Posición Actual: lat: ${coord.coords.latitude}, lng: ${

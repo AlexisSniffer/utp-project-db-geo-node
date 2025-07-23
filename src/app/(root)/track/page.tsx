@@ -1,10 +1,10 @@
 'use client'
 
+import OpenLayersMap from '@/componets/OpenLayersMap'
+import { CoordsProps } from '@/types/coords.types'
+import { Badge, Card, Col, Flex, Row, Slider, Table, Typography } from 'antd'
 import { useEffect, useState } from 'react'
 import { socket } from '../../../socket'
-import { CoordsProps } from '@/types/coords.types'
-import { Badge, Card, Col, Flex, Row, Table, Typography } from 'antd'
-import OpenLayersMap from '@/componets/OpenLayersMap'
 
 const { Text } = Typography
 
@@ -12,6 +12,7 @@ export default function Track() {
   const [isConnected, setIsConnected] = useState(false)
   const [transport, setTransport] = useState('N/A')
   const [coords, setCoords] = useState<CoordsProps[]>([])
+  const [zoom, setZoom] = useState<number>(2)
 
   useEffect(() => {
     if (socket.connected) {
@@ -111,9 +112,6 @@ export default function Track() {
               size="small"
               pagination={false}
               columns={[
-                /* {
-                  render: (_value, _record, index) => <span>{index == 0 ? '📍' : ''}</span>,
-                }, */
                 {
                   title: 'Fecha',
                   dataIndex: 'date',
@@ -132,7 +130,30 @@ export default function Track() {
             ></Table>
           </Col>
           <Col xs={24} lg={8}>
-            <OpenLayersMap coords={coords ? [coords[coords.length - 1]] : []} />
+            <Card title="Mapa - Posición Actual" style={{ width: '100%' }}>
+              <Flex vertical gap={8}>
+                <OpenLayersMap
+                  coords={coords && coords.length ? [coords[coords.length - 1]] : []}
+                  zoom={zoom}
+                />
+                <Row>
+                  <Col span={24}>
+                    <Flex align="center">
+                      <Text style={{ marginRight: 8 }}>Zoom:</Text>
+                      <Text style={{ marginRight: 8 }}>1</Text>
+                      <Slider
+                        min={1}
+                        max={15}
+                        value={zoom}
+                        onChange={setZoom}
+                        style={{ flex: 1 }}
+                      />
+                      <Text style={{ marginLeft: 8 }}>15</Text>
+                    </Flex>
+                  </Col>
+                </Row>
+              </Flex>
+            </Card>
           </Col>
         </Row>
       </Flex>

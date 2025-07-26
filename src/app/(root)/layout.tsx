@@ -6,6 +6,8 @@ import {
   HomeOutlined,
   MenuFoldOutlined,
   MenuUnfoldOutlined,
+  SettingOutlined,
+  UserOutlined,
 } from '@ant-design/icons'
 import { Button, Layout, Menu, theme } from 'antd'
 import Link from 'next/link'
@@ -43,6 +45,26 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               key: '3',
               icon: <FundProjectionScreenOutlined />,
               label: <Link href="/map">Mapa</Link>,
+            },
+            {
+              type: 'divider',
+            },
+            {
+              key: '4',
+              icon: <SettingOutlined />,
+              label: 'Settings',
+              children: [
+                {
+                  key: '4-1',
+                  icon: <SettingOutlined />,
+                  label: <Link href="/settings/config">Config</Link>,
+                },
+                {
+                  key: '4-2',
+                  icon: <UserOutlined />,
+                  label: <Link href="/settings/users">Users</Link>,
+                },
+              ],
             },
           ]}
         />

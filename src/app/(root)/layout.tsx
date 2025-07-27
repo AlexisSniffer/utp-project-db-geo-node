@@ -34,7 +34,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             {
               key: '1',
               icon: <HomeOutlined />,
-              label: 'Inicio',
+              label: <Link href="/">Inicio</Link>,
             },
             {
               key: '2',

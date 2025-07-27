@@ -1,22 +1,37 @@
 'use client'
 
-import React, { useState } from 'react'
-import { Form, Input, Button, Alert, Typography, Card } from 'antd'
+import { Alert, Button, Card, Form, Input, Typography } from 'antd'
+import { signIn } from 'next-auth/react'
+import { useRouter } from 'next/navigation'
+import { useState } from 'react'
 
 const { Title } = Typography
 
 export default function LoginPage() {
+  const router = useRouter()
   const [error, setError] = useState<string>('')
+  const [loading, setLoading] = useState<boolean>(false)
 
-  const onFinish = (values: { email: string; password: string }) => {
+  const onFinish = async (values: { email: string; password: string }) => {
     setError('')
+    setLoading(true)
+
     const { email, password } = values
-    if (email === 'admin@example.com' && password === '123') {
-      alert('Login exitoso')
-    } else {
-      setError('Credenciales inválidas')
+
+    const response = await signIn('credentials', {
+      email: email,
+      password: password,
+      redirect: false,
+    })
+
+    if (response?.error) {
+      setError(response.error)
       setTimeout(() => setError(''), 5000)
+    } else {
+      router.push('/')
     }
+
+    setLoading(false)
   }
 
   return (
@@ -53,7 +68,7 @@ export default function LoginPage() {
           <Input.Password />
         </Form.Item>
         <Form.Item>
-          <Button type="primary" htmlType="submit" block>
+          <Button type="primary" htmlType="submit" block loading={loading}>
             Entrar
           </Button>
         </Form.Item>

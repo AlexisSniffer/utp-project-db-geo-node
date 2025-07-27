@@ -9,7 +9,7 @@ import {
   SettingOutlined,
   UserOutlined,
 } from '@ant-design/icons'
-import { Button, Layout, Menu, theme } from 'antd'
+import { Button, Flex, Layout, Menu, theme } from 'antd'
 import Link from 'next/link'
 import { useState } from 'react'
 import styles from './page.module.css'
@@ -25,7 +25,20 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   return (
     <Layout style={{ minHeight: '100%' }}>
       <Sider trigger={null} collapsible collapsed={collapsed}>
-        <div className={styles['demo-logo-vertical']} />
+        <div className={styles['demo-logo-vertical']}>
+          <Flex justify="center" align="center" style={{ height: '100%' }}>
+            <span
+              style={{
+                color: '#fff',
+                fontWeight: 'bold',
+                fontSize: collapsed ? 16 : 20,
+                letterSpacing: 2,
+              }}
+            >
+              {collapsed ? 'GPS' : 'GPS Node'}
+            </span>
+          </Flex>
+        </div>
         <Menu
           theme="dark"
           mode="inline"

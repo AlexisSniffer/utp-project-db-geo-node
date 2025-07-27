@@ -22,6 +22,8 @@ export default function UsersPage() {
   const [form] = Form.useForm()
   const [messageApi, contextHolder] = message.useMessage()
   const [loading, setLoading] = useState(false)
+  const [editingUser, setEditingUser] = useState<User | null>(null)
+  const [isEditing, setIsEditing] = useState(false)
 
   const { data: users } = useSWR<User[]>(`/api/users`, fetcher)
 
@@ -32,29 +34,71 @@ export default function UsersPage() {
     })
   }
 
-  const handleAddUser = () => {
+  const openUserModal = (user?: User) => {
+    if (user) {
+      setIsEditing(true)
+      setEditingUser(user)
+      form.setFieldsValue({
+        email: user.email,
+        username: user.username,
+      })
+    } else {
+      setIsEditing(false)
+      setEditingUser(null)
+      form.resetFields()
+    }
+    setModalVisible(true)
+  }
+
+  const handleAddOrUpdateUser = () => {
     setLoading(true)
     form.validateFields().then(async (values) => {
       try {
-        const response = await fetch('/api/users', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
+        if (isEditing && editingUser) {
+          // Editar usuario existente
+          const updateData: { id: number; email: string; password?: string } = {
+            id: editingUser.id,
             email: values.email,
-            username: values.username,
-            password: values.password,
-          }),
-        })
+          }
 
-        const responseData = await response.json()
+          // Solo incluir password si se proporcionó uno nuevo
+          if (values.password) {
+            updateData.password = values.password
+          }
 
-        if (!response.ok) throw new Error(responseData.message || 'Error al registrar usuario')
+          const response = await fetch(`/api/users/`, {
+            method: 'PUT',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(updateData),
+          })
 
-        mutate('/api/users')
-        setModalVisible(false)
-        success('Usuario añadido correctamente')
+          const responseData = await response.json()
+
+          if (!response.ok) throw new Error(responseData.message || 'Error al actualizar usuario')
+
+          success('Usuario actualizado correctamente')
+        } else {
+          // Crear nuevo usuario
+          const response = await fetch('/api/users', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              email: values.email,
+              username: values.username,
+              password: values.password,
+            }),
+          })
+
+          const responseData = await response.json()
+
+          if (!response.ok) throw new Error(responseData.message || 'Error al registrar usuario')
+
+          success('Usuario añadido correctamente')
+        }
 
         form.resetFields()
       } catch (err: unknown) {
@@ -63,6 +107,8 @@ export default function UsersPage() {
           content: (err as Error).message,
         })
       } finally {
+        mutate('/api/users')
+        setModalVisible(false)
         setLoading(false)
       }
     })
@@ -116,7 +162,7 @@ export default function UsersPage() {
       key: 'actions',
       render: (record: User) => (
         <Flex gap="small">
-          <Button type="primary" icon={<EditOutlined />} />
+          <Button type="primary" icon={<EditOutlined />} onClick={() => openUserModal(record)} />
           <Button
             type="primary"
             danger
@@ -133,18 +179,18 @@ export default function UsersPage() {
       {contextHolder}
       <Flex justify="space-between" align="center">
         <Title level={2}>Usuarios</Title>
-        <Button type="primary" icon={<UserAddOutlined />} onClick={() => setModalVisible(true)}>
+        <Button type="primary" icon={<UserAddOutlined />} onClick={() => openUserModal()}>
           Añadir usuario
         </Button>
       </Flex>
       <Table dataSource={users} columns={columns} rowKey="id" />
       <Modal
-        title="Añadir usuario"
+        title={isEditing ? 'Editar usuario' : 'Añadir usuario'}
         open={modalVisible}
         onCancel={() => setModalVisible(false)}
-        onOk={handleAddUser}
+        onOk={handleAddOrUpdateUser}
         confirmLoading={loading}
-        okText="Añadir"
+        okText={isEditing ? 'Actualizar' : 'Añadir'}
         cancelText="Cancelar"
       >
         <Form form={form} layout="vertical">
@@ -161,29 +207,42 @@ export default function UsersPage() {
           <Form.Item
             label="Username"
             name="username"
-            rules={[{ required: true, message: 'Por favor ingresa el username' }]}
+            rules={[{ required: !isEditing, message: 'Por favor ingresa el username' }]}
           >
-            <Input />
+            <Input disabled={isEditing} />
           </Form.Item>
           <Form.Item
-            label="Password"
+            label={isEditing ? 'Nueva Password (opcional)' : 'Password'}
             name="password"
             rules={[
-              { required: true, message: 'Por favor ingresa el password' },
+              { required: !isEditing, message: 'Por favor ingresa el password' },
               { min: 8, message: 'El password debe tener al menos 8 caracteres' },
             ]}
           >
-            <Input.Password />
+            <Input.Password
+              placeholder={isEditing ? 'Dejar vacío para mantener la password actual' : ''}
+            />
           </Form.Item>
           <Form.Item
-            label="Confirmar Password"
+            label={isEditing ? 'Confirmar Nueva Password' : 'Confirmar Password'}
             name="confirmPassword"
             dependencies={['password']}
             rules={[
-              { required: true, message: 'Por favor confirma el password' },
+              {
+                required: !isEditing,
+                message: 'Por favor confirma el password',
+              },
               ({ getFieldValue }) => ({
                 validator(_, value) {
-                  if (!value || getFieldValue('password') === value) {
+                  const password = getFieldValue('password')
+
+                  // Si estamos editando y no hay password, no validar confirmación
+                  if (isEditing && !password && !value) {
+                    return Promise.resolve()
+                  }
+
+                  // Si hay password, debe coincidir con la confirmación
+                  if (!value || password === value) {
                     return Promise.resolve()
                   }
                   return Promise.reject(new Error('Los passwords no coinciden'))
@@ -191,7 +250,7 @@ export default function UsersPage() {
               }),
             ]}
           >
-            <Input.Password />
+            <Input.Password placeholder={isEditing ? 'Confirmar nueva password' : ''} />
           </Form.Item>
         </Form>
       </Modal>

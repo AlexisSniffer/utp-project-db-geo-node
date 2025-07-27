@@ -1,9 +1,11 @@
 'use client'
 
-import React, { useState } from 'react'
-import { Table, Button, Modal, Form, Input, message, Flex } from 'antd'
+import { fetcher } from '@/utils/fetcher'
+import { formatDateTime } from '@/utils/formatDate'
 import { UserAddOutlined } from '@ant-design/icons'
-import { Typography } from 'antd'
+import { Button, Flex, Form, Input, message, Modal, Table, Typography } from 'antd'
+import { useState } from 'react'
+import useSWR, { mutate } from 'swr'
 
 const { Title } = Typography
 
@@ -15,28 +17,13 @@ type User = {
   updatedAt: string
 }
 
-const mockUsers: User[] = [
-  {
-    id: 1,
-    email: 'john@example.com',
-    username: 'john',
-    createdAt: '2024-06-01T12:00:00Z',
-    updatedAt: '2024-06-01T12:00:00Z',
-  },
-  {
-    id: 2,
-    email: 'jane@example.com',
-    username: 'jane',
-    createdAt: '2024-06-02T12:00:00Z',
-    updatedAt: '2024-06-02T12:00:00Z',
-  },
-]
-
 export default function UsersPage() {
-  const [users, setUsers] = useState<User[]>(mockUsers)
   const [modalVisible, setModalVisible] = useState(false)
   const [form] = Form.useForm()
   const [messageApi, contextHolder] = message.useMessage()
+  const [loading, setLoading] = useState(false)
+
+  const { data: users } = useSWR<User[]>(`/api/users`, fetcher)
 
   const success = () => {
     messageApi.open({
@@ -46,17 +33,10 @@ export default function UsersPage() {
   }
 
   const handleAddUser = () => {
+    setLoading(true)
     form.validateFields().then(async (values) => {
-      const newUser: User = {
-        id: users.length + 1,
-        email: values.email,
-        username: values.username,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      }
-
       try {
-        const response = await fetch('/api/auth/register', {
+        const response = await fetch('/api/users', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -67,11 +47,15 @@ export default function UsersPage() {
             password: values.password,
           }),
         })
-        if (!response.ok) throw new Error('Error al registrar usuario')
 
-        setUsers([...users, newUser])
+        const responseData = await response.json()
+
+        if (!response.ok) throw new Error(responseData.message || 'Error al registrar usuario')
+
+        mutate('/api/users')
         setModalVisible(false)
         success()
+
         form.resetFields()
       } catch (err: unknown) {
         messageApi.open({
@@ -80,14 +64,25 @@ export default function UsersPage() {
         })
       }
     })
+    setLoading(false)
   }
 
   const columns = [
     { title: 'ID', dataIndex: 'id', key: 'id' },
     { title: 'Email', dataIndex: 'email', key: 'email' },
     { title: 'Username', dataIndex: 'username', key: 'username' },
-    { title: 'Creado', dataIndex: 'createdAt', key: 'createdAt' },
-    { title: 'Actualizado', dataIndex: 'updatedAt', key: 'updatedAt' },
+    {
+      title: 'Creado',
+      dataIndex: 'createdAt',
+      key: 'createdAt',
+      render: (text: string) => formatDateTime(new Date(text)),
+    },
+    {
+      title: 'Actualizado',
+      dataIndex: 'updatedAt',
+      key: 'updatedAt',
+      render: (text: string) => formatDateTime(new Date(text)),
+    },
   ]
 
   return (
@@ -105,19 +100,11 @@ export default function UsersPage() {
         open={modalVisible}
         onCancel={() => setModalVisible(false)}
         onOk={handleAddUser}
+        confirmLoading={loading}
         okText="Añadir"
         cancelText="Cancelar"
       >
-        <Form
-          form={form}
-          layout="vertical"
-          initialValues={{
-            email: 'alexis.sniffer@gmail.com',
-            username: 'AlexisSniffer',
-            password: 'Pruebas001',
-            confirmPassword: 'Pruebas001',
-          }}
-        >
+        <Form form={form} layout="vertical">
           <Form.Item
             label="Email"
             name="email"

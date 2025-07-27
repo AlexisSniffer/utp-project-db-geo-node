@@ -3,17 +3,11 @@ import bcrypt from 'bcrypt'
 
 export async function GET() {
   try {
-    const users = await prisma.user.findMany({
-      select: {
-        id: true,
-        username: true,
-        email: true,
-        createdAt: true,
-        updatedAt: true,
-      },
-    })
+    const users = await prisma.users.findMany()
 
-    return Response.json(users)
+    return Response.json(users, {
+      status: 200,
+    })
   } catch (error: unknown) {
     if (error instanceof Error) {
       return Response.json(
@@ -32,16 +26,18 @@ export async function POST(req: Request) {
   try {
     const data = await req.json()
 
-    const userFound = await prisma.user.findUnique({
+    const userFound = await prisma.users.findUnique({
       where: {
         email: data.email,
       },
     })
 
+    console.log('userFound', userFound)
+
     if (userFound) {
       return Response.json(
         {
-          message: 'Email already exists',
+          message: 'Correo electrónico ya registrado',
         },
         {
           status: 400,
@@ -49,7 +45,7 @@ export async function POST(req: Request) {
       )
     }
 
-    const usernameFound = await prisma.user.findUnique({
+    const usernameFound = await prisma.users.findUnique({
       where: {
         username: data.username,
       },
@@ -58,7 +54,7 @@ export async function POST(req: Request) {
     if (usernameFound) {
       return Response.json(
         {
-          message: 'username already exists',
+          message: 'El nombre de usuario ya existe',
         },
         {
           status: 400,
@@ -68,7 +64,7 @@ export async function POST(req: Request) {
 
     const hashedPassword = await bcrypt.hash(data.password, 10)
 
-    const user = await prisma.user.create({
+    const user = await prisma.users.create({
       data: {
         username: data.username,
         email: data.email,
@@ -76,7 +72,9 @@ export async function POST(req: Request) {
       },
     })
 
-    return Response.json(user)
+    return Response.json(user, {
+      status: 201,
+    })
   } catch (error: unknown) {
     if (error instanceof Error) {
       return Response.json(

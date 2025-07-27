@@ -2,7 +2,7 @@
 
 import { fetcher } from '@/utils/fetcher'
 import { formatDateTime } from '@/utils/formatDate'
-import { UserAddOutlined } from '@ant-design/icons'
+import { DeleteOutlined, EditOutlined, UserAddOutlined } from '@ant-design/icons'
 import { Button, Flex, Form, Input, message, Modal, Table, Typography } from 'antd'
 import { useState } from 'react'
 import useSWR, { mutate } from 'swr'
@@ -25,10 +25,10 @@ export default function UsersPage() {
 
   const { data: users } = useSWR<User[]>(`/api/users`, fetcher)
 
-  const success = () => {
+  const success = (content: string) => {
     messageApi.open({
       type: 'success',
-      content: 'Usuario añadido',
+      content: content || 'Operación exitosa',
     })
   }
 
@@ -54,7 +54,7 @@ export default function UsersPage() {
 
         mutate('/api/users')
         setModalVisible(false)
-        success()
+        success('Usuario añadido correctamente')
 
         form.resetFields()
       } catch (err: unknown) {
@@ -62,9 +62,37 @@ export default function UsersPage() {
           type: 'error',
           content: (err as Error).message,
         })
+      } finally {
+        setLoading(false)
       }
     })
-    setLoading(false)
+  }
+
+  const handleDeleteUser = async (id: number) => {
+    setLoading(true)
+    try {
+      const response = await fetch(`/api/users/`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ id }),
+      })
+
+      const responseData = await response.json()
+
+      if (!response.ok) throw new Error(responseData.message || 'Error al eliminar usuario')
+
+      mutate('/api/users')
+      success('Usuario eliminado correctamente')
+    } catch (err: unknown) {
+      messageApi.open({
+        type: 'error',
+        content: (err as Error).message,
+      })
+    } finally {
+      setLoading(false)
+    }
   }
 
   const columns = [
@@ -82,6 +110,21 @@ export default function UsersPage() {
       dataIndex: 'updatedAt',
       key: 'updatedAt',
       render: (text: string) => formatDateTime(new Date(text)),
+    },
+    {
+      title: 'Acciones',
+      key: 'actions',
+      render: (record: User) => (
+        <Flex gap="small">
+          <Button type="primary" icon={<EditOutlined />} />
+          <Button
+            type="primary"
+            danger
+            icon={<DeleteOutlined />}
+            onClick={() => handleDeleteUser(record.id)}
+          />
+        </Flex>
+      ),
     },
   ]
 

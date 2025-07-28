@@ -20,6 +20,10 @@ app.prepare().then(() => {
     socket.on('message', (msg: CoordsProps) => {
       io.emit('message', msg)
     })
+
+    socket.on('alert', (msg: { user: string; text: string }) => {
+      io.emit('alert', msg)
+    })
   })
 
   io.on('disconnect', (socket: Socket) => {

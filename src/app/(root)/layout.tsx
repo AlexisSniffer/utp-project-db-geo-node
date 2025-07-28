@@ -75,11 +75,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 icon: <SettingOutlined />,
                 label: 'Settings',
                 children: [
-                  {
+                  /*  {
                     key: '4-1',
                     icon: <SettingOutlined />,
                     label: <Link href="/settings/config">Config</Link>,
-                  },
+                  }, */
                   {
                     key: '4-2',
                     icon: <UserOutlined />,

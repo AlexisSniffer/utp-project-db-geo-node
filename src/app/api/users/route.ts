@@ -51,8 +51,6 @@ export async function POST(req: Request): Promise<Response> {
       },
     })
 
-    console.log('userFound', userFound)
-
     if (userFound) {
       return Response.json(
         {

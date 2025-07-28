@@ -2,7 +2,7 @@
 
 import OpenLayersMap from '@/componets/OpenLayersMap'
 import { CoordsProps } from '@/types/coords.types'
-import { Badge, Card, Col, Flex, Row, Table, Typography } from 'antd'
+import { Badge, Card, Col, Flex, message, Row, Table, Typography } from 'antd'
 import { useEffect, useState } from 'react'
 import { socket } from '../../../socket'
 
@@ -12,6 +12,7 @@ export default function Map() {
   const [isConnected, setIsConnected] = useState(false)
   const [transport, setTransport] = useState('N/A')
   const [coords, setCoords] = useState<CoordsProps[]>([])
+  const [messageApi, contextHolder] = message.useMessage()
 
   useEffect(() => {
     if (socket.connected) {
@@ -45,6 +46,13 @@ export default function Map() {
       })
     })
 
+    socket.on('alert', (msg: { user: string; text: string }) => {
+      messageApi.open({
+        type: 'success',
+        content: `Usuario: ${msg.user} - Mensaje: ${msg.text}`,
+      })
+    })
+
     socket.on('connect', onConnect)
     socket.on('disconnect', onDisconnect)
 
@@ -56,6 +64,7 @@ export default function Map() {
 
   return (
     <>
+      {contextHolder}
       <Flex vertical gap={16}>
         <Row gutter={[16, 16]}>
           <Col xs={24} sm={12} lg={8}>

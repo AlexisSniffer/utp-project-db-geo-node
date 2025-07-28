@@ -2,7 +2,20 @@
 
 import OpenLayersMap from '@/componets/OpenLayersMap'
 import { CoordsProps } from '@/types/coords.types'
-import { Badge, Card, Col, Flex, message, Row, Slider, Table, Typography } from 'antd'
+import {
+  Badge,
+  Button,
+  Card,
+  Col,
+  Flex,
+  Form,
+  Input,
+  message,
+  Row,
+  Slider,
+  Table,
+  Typography,
+} from 'antd'
 import { useSession } from 'next-auth/react'
 import { useEffect, useState } from 'react'
 import { socket } from '../../../socket'
@@ -16,6 +29,7 @@ export default function Track() {
   const [coords, setCoords] = useState<CoordsProps[]>([])
   const [zoom, setZoom] = useState<number>(2)
   const [messageApi, contextHolder] = message.useMessage()
+  const [form] = Form.useForm()
 
   useEffect(() => {
     if (socket.connected) {
@@ -163,6 +177,29 @@ export default function Track() {
             ></Table>
           </Col>
           <Col xs={24} lg={8}>
+            <Card title="Enviar Mensaje" style={{ width: '100%', marginBottom: 16 }}>
+              <Form
+                form={form}
+                layout="inline"
+                onFinish={({ mensaje }) => {
+                  socket.emit('alert', { user: session?.user?.name ?? 'Anónimo', text: mensaje })
+                  form.resetFields()
+                }}
+              >
+                <Form.Item
+                  name="mensaje"
+                  style={{ flex: 1 }}
+                  rules={[{ required: true, message: 'Escribe un mensaje' }]}
+                >
+                  <Input placeholder="Escribe un mensaje..." allowClear style={{ width: '100%' }} />
+                </Form.Item>
+                <Form.Item>
+                  <Button type="primary" htmlType="submit">
+                    Enviar
+                  </Button>
+                </Form.Item>
+              </Form>
+            </Card>
             <Card title="Mapa - Posición Actual" style={{ width: '100%' }}>
               <Flex vertical gap={8}>
                 <OpenLayersMap

@@ -7,7 +7,7 @@
     "dev:server": "ts-node ./src/server.ts",
     "build:server": "tsc src/server.ts --outDir build --target ES2017 --module commonjs --esModuleInterop --skipLibCheck",
     "build": "next build && npm run build:server",
-    "start": "NODE_ENV=production node build/server.js",
+    "start": "node build/server.js",
     "lint": "next lint",
     "migrate": "prisma migrate dev --name init",
     "postinstall": "prisma generate",

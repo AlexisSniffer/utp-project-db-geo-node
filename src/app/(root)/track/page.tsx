@@ -51,7 +51,7 @@ export default function Track() {
         navigator.geolocation.getCurrentPosition(
           async (position) => {
             const track: CoordsProps = {
-              node: socket.id!,
+              node: session?.user?.name ?? '',
               date: new Date(),
               coords: {
                 latitude: position.coords.latitude,

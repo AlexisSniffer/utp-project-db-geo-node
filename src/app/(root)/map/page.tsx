@@ -97,6 +97,12 @@ export default function Map() {
                   render: (date) => new Date(date).toLocaleString(),
                 },
                 {
+                  title: 'Usuario',
+                  dataIndex: 'node',
+                  key: 'node',
+                  render: (node) => node || 'N/A',
+                },
+                {
                   title: 'Coordenadas',
                   children: [
                     { title: 'Latitud', dataIndex: ['coords', 'latitude'], key: 'latitude' },

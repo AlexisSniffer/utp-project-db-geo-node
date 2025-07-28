@@ -6,7 +6,8 @@ import { fetcher } from '@/utils/fetcher'
 import { formatDateTime } from '@/utils/formatDate'
 import { EyeOutlined, FilePdfOutlined } from '@ant-design/icons'
 import { Button, Flex, Modal, Table, Typography } from 'antd'
-import { useState } from 'react'
+import type { ColumnType } from 'antd/es/table'
+import { useState, useMemo } from 'react'
 import useSWR from 'swr'
 import jsPDF from 'jspdf'
 import autoTable from 'jspdf-autotable'
@@ -33,6 +34,19 @@ export default function HistoryPage() {
   const [selectedTrack, setSelectedTrack] = useState<CoordsProps | null>(null)
 
   const { data: tracks, error } = useSWR<Track[]>(`/api/tracks`, fetcher)
+
+  // Get unique users for filter options
+  const uniqueUsers = useMemo(() => {
+    if (!tracks) return []
+    const users = tracks.map((track) => ({
+      text: track.user.username,
+      value: track.user.username,
+    }))
+    // Remove duplicates
+    return users.filter(
+      (user, index, self) => index === self.findIndex((u) => u.value === user.value),
+    )
+  }, [tracks])
 
   if (error) {
     return <div>Error cargando coordenadas</div>
@@ -88,7 +102,7 @@ export default function HistoryPage() {
     })
   }
 
-  const columns = [
+  const columns: ColumnType<Track>[] = [
     { title: 'ID', dataIndex: 'id', key: 'id' },
     {
       title: 'latitude',
@@ -110,6 +124,9 @@ export default function HistoryPage() {
       title: 'Usuario',
       dataIndex: ['user', 'username'],
       key: 'username',
+      filters: uniqueUsers,
+      onFilter: (value, record) => record.user.username === value,
+      filterMultiple: true,
     },
     {
       title: 'Mapa',

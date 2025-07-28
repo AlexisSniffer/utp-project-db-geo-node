@@ -2,17 +2,20 @@
 
 import OpenLayersMap from '@/componets/OpenLayersMap'
 import { CoordsProps } from '@/types/coords.types'
-import { Badge, Card, Col, Flex, Row, Slider, Table, Typography } from 'antd'
+import { Badge, Card, Col, Flex, message, Row, Slider, Table, Typography } from 'antd'
+import { useSession } from 'next-auth/react'
 import { useEffect, useState } from 'react'
 import { socket } from '../../../socket'
 
 const { Text } = Typography
 
 export default function Track() {
+  const { data: session } = useSession()
   const [isConnected, setIsConnected] = useState(false)
   const [transport, setTransport] = useState('N/A')
   const [coords, setCoords] = useState<CoordsProps[]>([])
   const [zoom, setZoom] = useState<number>(2)
+  const [messageApi, contextHolder] = message.useMessage()
 
   useEffect(() => {
     if (socket.connected) {
@@ -44,9 +47,9 @@ export default function Track() {
 
   useEffect(() => {
     const getLocation = () => {
-      if (navigator.geolocation) {
+      if (navigator.geolocation && session?.user?.id) {
         navigator.geolocation.getCurrentPosition(
-          (position) => {
+          async (position) => {
             const track: CoordsProps = {
               node: socket.id!,
               date: new Date(),
@@ -62,26 +65,56 @@ export default function Track() {
                 : [...prevCoords, track]
             })
             socket.emit('message', track)
+
+            try {
+              const response = await fetch('/api/tracks', {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                  userId: parseInt(session.user.id),
+                  latitude: position.coords.latitude,
+                  longitude: position.coords.longitude,
+                  date: new Date().toISOString(),
+                }),
+              })
+
+              if (!response.ok) {
+                messageApi.open({
+                  type: 'error',
+                  content: 'Error al guardar la ubicación',
+                })
+              }
+            } catch (error) {
+              messageApi.open({
+                type: 'error',
+                content: error instanceof Error ? error.message : 'Error al guardar la ubicación',
+              })
+            }
           },
           (error) => {
             console.error('Error obteniendo coordenadas:', error)
           },
           {
             enableHighAccuracy: true,
-            timeout: 5000,
+            timeout: 10000,
             maximumAge: 0,
           },
         )
       }
     }
 
-    getLocation()
-    const interval = setInterval(getLocation, 10000)
-    return () => clearInterval(interval)
-  }, [])
+    if (session?.user?.id) {
+      getLocation()
+      const interval = setInterval(getLocation, 10000)
+      return () => clearInterval(interval)
+    }
+  }, [session?.user.id, messageApi])
 
   return (
     <>
+      {contextHolder}
       <Flex vertical gap={16}>
         <Row gutter={[16, 16]}>
           <Col xs={24} sm={12} lg={8}>

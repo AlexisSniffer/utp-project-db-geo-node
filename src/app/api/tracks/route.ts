@@ -23,6 +23,9 @@ export async function GET(req: Request): Promise<Response> {
         date: true,
         user: true,
       },
+      orderBy: {
+        date: 'desc',
+      },
     })
 
     if (!tracks || tracks.length === 0) {
